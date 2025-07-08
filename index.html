@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>Develop time project №5</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="https://avatars.githubusercontent.com/u/142392565?v=4" type="image/png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="https://avatars.githubusercontent.com/u/142392565?v=4" type="image/png" />
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&display=swap');
 
@@ -23,19 +23,20 @@
             position: relative;
         }
 
-        canvas {
-            position: absolute;
+        #bg {
+            background-color: black;
+            position: fixed;
+            pointer-events: none;
             top: 0;
             left: 0;
-            z-index: -1;
             width: 100%;
             height: 100%;
-            pointer-events: none;
+            z-index: -1;
         }
 
         .container {
             background: #1e1e1e19;
-            backdrop-filter: blur(25px);
+            backdrop-filter: blur(55px);
             padding: 20px;
             border-radius: 16px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
@@ -67,7 +68,7 @@
     </style>
 </head>
 <body>
-    <canvas id="bgCanvas"></canvas>
+    <canvas id="bg"></canvas>
     <div class="container">
         <h1 id="title">Время разработки проекта №5</h1>
         <div class="time" id="main-timer"></div>
@@ -128,7 +129,6 @@
         
             document.getElementById('main-timer').textContent = `${y}, ${m}, ${d}`;
         
-            // Показываем дополнительное время, если прошло < 1 года
             if (diff < 1000 * 60 * 60 * 24 * 365.25) {
                 const totalSeconds = Math.floor(diff / 1000);
                 const h = Math.floor(totalSeconds / 3600) % 24;
@@ -145,75 +145,124 @@
             }
         }
 
-
         document.getElementById('title').textContent = t.title;
         setInterval(updateTimer, 1000);
         updateTimer();
 
-        // Canvas background animation
-        const canvas = document.getElementById('bgCanvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
+        // Новая анимация из вашего второго блока
+        (function () {
+            const canvas = document.getElementById("bg");
+            const ctx = canvas.getContext("2d");
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+            const config = {
+                particleCount: 150,
+                speed: 0.008,
+                lineWidth: 2,
+                color: "white",
+                fadeSpeed: 0.05,
+                perspective: 1000,
+                zMin: -0.5,
+                zMax: 1,
+                glow: true,
+                lifetime: 800
+            };
 
-        function createParticle() {
-            const angle = Math.random() * 2 * Math.PI;
-            const speed = Math.random() * 0.5 + 0.5 + 2;
-            const x = canvas.width / 2;
-            const y = canvas.height / 2;
+            let w, h;
+            const particles = [];
 
-            particles.push({
-                x: x,
-                y: y,
-                speedX: Math.cos(angle) * speed,
-                speedY: Math.sin(angle) * speed,
-                life: 200,
-                alpha: 1
-            });
-        }
+            function resize() {
+                w = canvas.width = window.innerWidth;
+                h = canvas.height = window.innerHeight;
+            }
 
-        function updateParticles() {
-            for (let i = 0; i < particles.length; i++) {
-                const p = particles[i];
-                p.x += p.speedX;
-                p.y += p.speedY;
-                p.life--;
-                p.alpha = p.life / 200;
+            function createParticle() {
+                const angle = Math.random() * 2 * Math.PI;
+                const radius = Math.random() * 2;
+                const z = Math.random() * (config.zMax - config.zMin) + config.zMin;
+                return {
+                    x: Math.cos(angle) * radius,
+                    y: Math.sin(angle) * radius,
+                    z,
+                    alpha: 0,
+                    age: 0,
+                    lifetime: config.lifetime
+                };
+            }
 
-                if (p.life <= 0) {
-                    particles.splice(i, 1);
-                    i--;
+            function initParticles() {
+                particles.length = 0;
+                for (let i = 0; i < config.particleCount; i++) {
+                    particles.push(createParticle());
                 }
             }
-        }
 
-        function drawParticles() {
-            // Полупрозрачный фон для эффекта следа
-            ctx.fillStyle = 'rgba(24, 24, 24, 0.1)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            for (const p of particles) {
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha})`;
-                ctx.fill();
+            function project(x, y, z) {
+                const scale = config.perspective / (config.perspective + z * config.perspective);
+                return {
+                    x: x * scale * w + w / 2,
+                    y: y * scale * h + h / 2,
+                    scale
+                };
             }
-        }
 
-        function animateBackground() {
-            for (let i = 0; i < 3; i++) createParticle();
-            updateParticles();
-            drawParticles();
-            requestAnimationFrame(animateBackground);
-        }
-        animateBackground();
+            function update() {
+                ctx.clearRect(0, 0, w, h);
 
+                if (config.glow) {
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = config.color;
+                } else {
+                    ctx.shadowBlur = 0;
+                }
+
+                particles.sort(function (a, b) {
+                    return b.z - a.z;
+                });
+
+                for (let i = 0; i < particles.length; i++) {
+                    const p = particles[i];
+                    p.z -= config.speed;
+                    p.age++;
+
+                    if (p.age < p.lifetime * 0.2) {
+                        p.alpha = p.age / (p.lifetime * 0.2);
+                    } else if (p.age > p.lifetime * 0.8) {
+                        p.alpha = (p.lifetime - p.age) / (p.lifetime * 0.2);
+                    } else {
+                        p.alpha = 1;
+                    }
+
+                    if (p.z < config.zMin || p.age >= p.lifetime) {
+                        particles[i] = createParticle();
+                        continue;
+                    }
+
+                    const end = project(p.x, p.y, p.z);
+                    const start = project(p.x, p.y, p.z + 0.05);
+
+                    ctx.strokeStyle = config.color;
+                    ctx.lineWidth = config.lineWidth * (1 - p.z);
+                    ctx.globalAlpha = Math.max(0, p.alpha * (1 - p.z));
+
+                    ctx.beginPath();
+                    ctx.moveTo(start.x, start.y);
+                    ctx.lineTo(end.x, end.y);
+                    ctx.stroke();
+                }
+
+                ctx.globalAlpha = 1;
+                requestAnimationFrame(update);
+            }
+
+            window.addEventListener("resize", function () {
+                resize();
+                initParticles();
+            });
+
+            resize();
+            initParticles();
+            update();
+        })();
     </script>
 </body>
 </html>
