@@ -133,7 +133,7 @@ function updateTimer() {
 setInterval(updateTimer, 1000);
 updateTimer();
 
-// === ЭПИЧНАЯ АНИМАЦИЯ ЧАСТИЦ ===
+// === ЭПИЧНАЯ АНИМАЦИЯ С FPS LOCK 60 ===
 (function(){
     const canvas = document.getElementById("bg");
     const ctx = canvas.getContext("2d");
@@ -145,6 +145,8 @@ updateTimer();
         radius: 1.8,
         perspective: 1000
     };
+    const frameInterval = 1000 / 60; // 60 FPS
+    let lastFrame = performance.now();
 
     function resize() {
         w = canvas.width = window.innerWidth;
@@ -168,7 +170,14 @@ updateTimer();
         return { x: x * scale * w / 2 + w / 2, y: y * scale * h / 2 + h / 2, scale };
     }
 
-    function update() {
+    function loop(now) {
+        const delta = now - lastFrame;
+        if (delta < frameInterval) {
+            requestAnimationFrame(loop);
+            return;
+        }
+        lastFrame = now - (delta % frameInterval);
+
         hue = (hue + 0.4) % 360;
         time += config.speed * 50;
         ctx.clearRect(0, 0, w, h);
@@ -200,13 +209,13 @@ updateTimer();
         }
 
         ctx.globalAlpha = 1;
-        requestAnimationFrame(update);
+        requestAnimationFrame(loop);
     }
 
     window.addEventListener("resize", () => { resize(); init(); });
     resize();
     init();
-    update();
+    requestAnimationFrame(loop);
 })();
 </script>
 </body>
