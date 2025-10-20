@@ -1,79 +1,62 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8" />
-    <title>Develop time project №5</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="https://avatars.githubusercontent.com/u/142392565?v=4" type="image/png" />
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&display=swap');
+<meta charset="UTF-8">
+<title>Develop time project №5</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="https://avatars.githubusercontent.com/u/142392565?v=4" type="image/png">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&display=swap');
 
-    body {
-        margin: 0;
-        height: 100vh;
-        font-family: 'JetBrains Mono', monospace;
-        background: linear-gradient(135deg, #181818, #1a1a1a);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-        text-align: center;
-        animation: fadeIn 500ms ease-in-out;
-        overflow: hidden;
-        position: relative;
-    }
-
-    #bg {
-        position: fixed;
-        pointer-events: none;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: -1;
-    }
-
-    .container {
-        display: flex;
-        flex-direction: column;
-        flex-wrap: nowrap;
-        gap: 10px;
-        background-color: rgba(0, 0, 0, 0.15);
-        backdrop-filter: blur(2px);
-        padding: 10px;
-        border-radius: 10px;
-        border: 1px solid #2b2b2b;
-        transition: background-color 1s ease;
-    }
-
-    h1 {
-        font-size: clamp(1.0em, 4vw, 1.6em);
-        font-weight: 500;
-        margin: 0;
-        color: #ffffff;
-        text-shadow: 0 0 10px #ffffff35;
-        transition: color 2s ease;
-    }
-
-    .time {
-        font-size: clamp(1.2em, 5vw, 1.5em);
-        color: #aaaaaa;
-        transition: color 2s ease;
-    }
-
-    .extra {
-        font-size: clamp(0.9em, 3.5vw, 1.1em);
-        color: #aaaaaa;
-        user-select: none;
-    }
-
-    
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(50px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    </style>
+body {
+    margin: 0;
+    height: 100vh;
+    font-family: 'JetBrains Mono', monospace;
+    background: radial-gradient(circle at center, #0e0e0e 0%, #181818 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+    animation: fadeIn 500ms ease-in-out;
+    overflow: hidden;
+    position: relative;
+}
+#bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+}
+.container {
+    background-color: rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(3px);
+    padding: 10px 15px;
+    border-radius: 12px;
+    border: 1px solid #2b2b2b;
+}
+h1 {
+    font-size: clamp(1em, 4vw, 1.6em);
+    font-weight: 500;
+    color: #fff;
+    margin: 0;
+    text-shadow: 0 0 10px #ffffff40;
+}
+.time {
+    font-size: clamp(1.2em, 5vw, 1.5em);
+    color: #ccc;
+}
+.extra {
+    font-size: clamp(0.9em, 3.5vw, 1.1em);
+    color: #aaa;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
 </head>
 <body>
 <canvas id="bg"></canvas>
@@ -111,15 +94,15 @@ const locale = {
 
 const lang = navigator.language.startsWith('ru') ? 'ru' : 'en';
 const t = locale[lang];
+document.getElementById('title').textContent = t.title;
 
 function plural(n, forms) {
     if (lang === 'ru') {
         if (n % 10 === 1 && n % 100 !== 11) return forms[0];
         if (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) return forms[1];
         return forms[2];
-    } else {
-        return n === 1 ? forms[0] : forms[1];
     }
+    return n === 1 ? forms[0] : forms[1];
 }
 
 function updateTimer() {
@@ -143,103 +126,86 @@ function updateTimer() {
     const min = Math.floor(totalSeconds / 60) % 60;
     const sec = totalSeconds % 60;
 
-    const hText = `${h} ${plural(h, t.units.hour)}`;
-    const minText = `${min} ${plural(min, t.units.minute)}`;
-    const secText = `${sec} ${plural(sec, t.units.second)}`;
-
-    document.getElementById('sub-timer').textContent = `${hText}, ${minText}, ${secText}`;
+    document.getElementById('sub-timer').textContent =
+        `${h} ${plural(h, t.units.hour)}, ${min} ${plural(min, t.units.minute)}, ${sec} ${plural(sec, t.units.second)}`;
 }
 
-document.getElementById('title').textContent = t.title;
 setInterval(updateTimer, 1000);
 updateTimer();
 
-// ====== Анимация частиц ======
+// === ЭПИЧНАЯ АНИМАЦИЯ ЧАСТИЦ ===
 (function(){
     const canvas = document.getElementById("bg");
     const ctx = canvas.getContext("2d");
-    let w,h,mouseX=0,mouseY=0,hue=0;
+    let w, h, hue = 0, time = 0;
     let particles = [];
-    let config = {
-        particleCount: 150,
-        speed: 0.008,
-        perspective: 1000,
-        zMin: -0.5,
-        zMax: 1,
-        lifetime: 800
+    const config = {
+        count: 220,
+        speed: 0.004,
+        radius: 1.8,
+        perspective: 1000
     };
 
-    function resize(){
+    function resize() {
         w = canvas.width = window.innerWidth;
         h = canvas.height = window.innerHeight;
     }
 
-    function createParticle(){
-        const angle = Math.random()*2*Math.PI;
-        const radius = Math.random()*2;
-        const z = Math.random()*(config.zMax-config.zMin)+config.zMin;
-        return {x: Math.cos(angle)*radius, y: Math.sin(angle)*radius, z, alpha:0, age:0, lifetime:config.lifetime, pulse: Math.random()*0.5+0.75};
+    function createParticle() {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.random() * 3 + 1;
+        const z = Math.random();
+        return { angle, dist, z, life: Math.random() * 500 };
     }
 
-    function initParticles(){
+    function init() {
         particles = [];
-        for(let i=0;i<config.particleCount;i++) particles.push(createParticle());
+        for (let i = 0; i < config.count; i++) particles.push(createParticle());
     }
 
-    function project(x,y,z){
-        const scale = config.perspective/(config.perspective+z*config.perspective);
-        return {x: (x+mouseX*0.001)*scale*w+w/2, y: (y+mouseY*0.001)*scale*h+h/2, scale};
+    function project(x, y, z) {
+        const scale = config.perspective / (config.perspective + z * config.perspective);
+        return { x: x * scale * w / 2 + w / 2, y: y * scale * h / 2 + h / 2, scale };
     }
 
-    let lastTime = performance.now();
-    let fpsCheck = 0;
+    function update() {
+        hue = (hue + 0.4) % 360;
+        time += config.speed * 50;
+        ctx.clearRect(0, 0, w, h);
 
-    function update(){
-        const now = performance.now();
-        const delta = now-lastTime;
-        lastTime = now;
-        fpsCheck++;
-        if(fpsCheck>60){
-            const fps = 1000/delta;
-            if(fps<40 && config.particleCount>50) config.particleCount -= 10;
-            fpsCheck=0;
-        }
-
-        hue = (hue+0.2)%360;
-        ctx.clearRect(0,0,w,h);
-        particles.sort((a,b)=>b.z-a.z);
-
-        for(let i=0;i<particles.length;i++){
+        for (let i = 0; i < particles.length; i++) {
             const p = particles[i];
-            p.z -= config.speed;
-            p.age++;
-            if(p.age < p.lifetime*0.2) p.alpha = p.age/(p.lifetime*0.2);
-            else if(p.age > p.lifetime*0.8) p.alpha = (p.lifetime-p.age)/(p.lifetime*0.2);
-            else p.alpha = 1;
+            p.angle += config.speed * (0.5 + p.z);
+            p.z -= config.speed * 0.5;
+            p.life += 1;
 
-            if(p.z < config.zMin || p.age >= p.lifetime){
+            if (p.z <= -0.5) {
                 particles[i] = createParticle();
                 continue;
             }
 
-            const end = project(p.x*p.pulse, p.y*p.pulse, p.z);
-            const start = project(p.x*p.pulse, p.y*p.pulse, p.z+0.05);
-            ctx.strokeStyle = `hsl(${(hue+i)%360}, 100%, 70%)`;
-            ctx.lineWidth = 2*(1-p.z);
-            ctx.globalAlpha = Math.max(0, p.alpha*(1-p.z));
+            const pulse = Math.sin(p.life * 0.03) * 0.5 + 1;
+            const x = Math.cos(p.angle) * p.dist * pulse;
+            const y = Math.sin(p.angle * 1.2) * p.dist * pulse;
+            const start = project(x, y, p.z);
+            const end = project(x, y, p.z + 0.05);
+
+            ctx.strokeStyle = `hsl(${(hue + i * 2) % 360}, 100%, 65%)`;
+            ctx.lineWidth = 1.5 * (1 - p.z);
+            ctx.globalAlpha = Math.max(0, 1 - p.z * 1.2);
             ctx.beginPath();
             ctx.moveTo(start.x, start.y);
             ctx.lineTo(end.x, end.y);
             ctx.stroke();
         }
+
         ctx.globalAlpha = 1;
         requestAnimationFrame(update);
     }
 
-    window.addEventListener("resize", ()=>{resize();initParticles();});
-    window.addEventListener("mousemove", e=>{mouseX = e.clientX - w/2; mouseY = e.clientY - h/2;});
+    window.addEventListener("resize", () => { resize(); init(); });
     resize();
-    initParticles();
+    init();
     update();
 })();
 </script>
